@@ -1,5 +1,7 @@
 # go-workerpool
 
+[![test](https://github.com/kenkyu392/go-workerpool/workflows/test/badge.svg)](https://github.com/kenkyu392/go-workerpool)
+[![codecov](https://codecov.io/gh/kenkyu392/go-workerpool/branch/master/graph/badge.svg)](https://codecov.io/gh/kenkyu392/go-workerpool)
 [![go.dev reference](https://img.shields.io/badge/go.dev-reference-00ADD8?logo=go)](https://pkg.go.dev/github.com/kenkyu392/go-workerpool)
 [![go report card](https://goreportcard.com/badge/github.com/kenkyu392/go-workerpool)](https://goreportcard.com/report/github.com/kenkyu392/go-workerpool)
 [![license](https://img.shields.io/github/license/kenkyu392/go-workerpool.svg)](LICENSE)
