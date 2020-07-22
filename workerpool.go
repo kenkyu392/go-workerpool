@@ -4,55 +4,29 @@ import (
 	"sync"
 )
 
-// NewWorkerPool ...
-func NewWorkerPool(opts ...Option) (*WorkerPool, error) {
-	wp := new(WorkerPool)
-	for _, opt := range opts {
-		if err := opt(wp); err != nil {
-			return nil, err
-		}
+// New ...
+func New(max int) *WorkerPool {
+	if max < 1 {
+		max = 1
 	}
-
-	if wp.maxQueues < 1 {
-		wp.maxQueues = 1
+	wp := &WorkerPool{
+		max: max,
+		job: make(chan Job, max),
 	}
-
-	if wp.maxWorkers < 1 {
-		wp.maxWorkers = 1
-	}
-
-	wp.qs = make(chan Worker, wp.maxQueues)
-	wp.wg.Add(wp.maxWorkers)
-	for i := 0; i < wp.maxWorkers; i++ {
+	wp.wg.Add(wp.max)
+	for i := 0; i < wp.max; i++ {
 		go wp.dispatch()
 	}
-
-	return wp, nil
+	return wp
 }
 
 // WorkerPool ...
 type WorkerPool struct {
-	wg         sync.WaitGroup
-	qs         chan Worker
-	errs       []error
-	closed     bool
-	maxQueues  int
-	maxWorkers int
-}
-
-// MaxQueues ...
-func (w *WorkerPool) MaxQueues() int {
-	return w.maxQueues
-}
-
-// MaxWorkers ...
-func (w *WorkerPool) MaxWorkers() int {
-	return w.maxWorkers
-}
-
-// Queues ...
-func (w *WorkerPool) Queues() int {
-	return len(w.qs)
+	wg   sync.WaitGroup
+	job  chan Job
+	max  int
+	errs []error
+	once sync.Once
 }
 
 // Errors ...
@@ -60,26 +34,24 @@ func (w *WorkerPool) Errors() []error {
 	return w.errs
 }
 
-// AddWorker ...
-func (w *WorkerPool) AddWorker(fn Worker) {
+// AddJob ...
+func (w *WorkerPool) AddJob(fn Job) {
 	if fn != nil {
-		w.qs <- fn
+		w.job <- fn
 	}
 }
 
-// AddWorkerFunc ...
-func (w *WorkerPool) AddWorkerFunc(fn WorkerFunc) {
-	w.AddWorker(fn)
+// AddJobFunc ...
+func (w *WorkerPool) AddJobFunc(fn JobFunc) {
+	w.AddJob(fn)
 }
 
 // Wait ...
 func (w *WorkerPool) Wait() []error {
-	if w.closed {
-		return w.Errors()
-	}
-	close(w.qs)
-	w.wg.Wait()
-	w.closed = true
+	w.once.Do(func() {
+		close(w.job)
+		w.wg.Wait()
+	})
 	return w.Errors()
 }
 
@@ -87,7 +59,8 @@ func (w *WorkerPool) dispatch() {
 	defer w.wg.Done()
 	for {
 		select {
-		case worker, ok := <-w.qs:
+		default:
+		case worker, ok := <-w.job:
 			if !ok {
 				return
 			}
