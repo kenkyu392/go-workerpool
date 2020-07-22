@@ -45,7 +45,10 @@ func main() {
 		v := v
 		wp.AddJobFunc(func() error {
 			d := time.Millisecond * time.Duration(rand.Intn(400)+400)
-			log.Printf("number:%d goroutines:%d sleep:%v animal:%s", n, runtime.NumGoroutine(), d, v)
+			log.Printf(
+				"number:%d goroutines:%d sleep:%v animal:%s",
+				n, runtime.NumGoroutine(), d, v,
+			)
 			time.Sleep(d)
 			return nil
 		})
